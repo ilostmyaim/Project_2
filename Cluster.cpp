@@ -11,6 +11,7 @@
 #include "Cluster.h"
 #include "hash.h"
 
+using namespace std;
 
 Cluster::Cluster(int cluster_id, item_t item)
 {
@@ -30,7 +31,7 @@ void Cluster::addItem(item_t item)
 bool Cluster::removeItem(unsigned int item_id)
 {
 	for(int i=0;i<(int)_items.size();i++){
-		if(_items.id == item_id){
+		if(_items[i].id == item_id){
 			_items.erase(_items.begin() + i);
 			return true;
 		}
@@ -43,9 +44,9 @@ double Cluster::getCentroidValue(int index)
 	return _centroid[index];
 }
 
-double Cluster::setCentroidValue(int index, double value)
+void Cluster::setCentroidValue(int index, double value)
 {
-	_centrod[index] = value;
+	_centroid[index] = value;
 }
 
 item_t Cluster::getItem(int index)
@@ -55,10 +56,11 @@ item_t Cluster::getItem(int index)
 
 int Cluster::getTotalItems()
 {
-	return _items.size();
+	return (int)_items.size();
 }
 
 int Cluster::getID()
 {
 	return this->_cluster_id;
 }
+

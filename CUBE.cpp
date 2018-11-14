@@ -214,7 +214,7 @@ int CUBE::executeCUBE(Metric metric)
 
 	cout << "Max_ratio: " << max_ratio << endl;
 	cout << "finished" << endl;
-
+	return 0;
 }
 
 //displays CUBE structure
