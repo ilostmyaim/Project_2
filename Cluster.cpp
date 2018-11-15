@@ -16,6 +16,7 @@ using namespace std;
 Cluster::Cluster(int cluster_id, item_t item)
 {
 	this->_cluster_id = cluster_id;
+	this->_centroid_id = item.id;
 	for(int i=0; i<(int)item.vec.size(); i++){
 		_centroid.push_back(item.vec[i]);	
 	}
@@ -39,9 +40,9 @@ bool Cluster::removeItem(unsigned int item_id)
 	return false;
 }
 
-double Cluster::getCentroidValue(int index)
+vector_t Cluster::getCentroid()
 {
-	return _centroid[index];
+	return _centroid;
 }
 
 void Cluster::setCentroidValue(int index, double value)
@@ -62,5 +63,10 @@ int Cluster::getTotalItems()
 int Cluster::getID()
 {
 	return this->_cluster_id;
+}
+
+unsigned int Cluster::getCentroidID()
+{
+	return this->_centroid_id;
 }
 

@@ -39,6 +39,7 @@ private:
 public:
 	KMeans(init_params_t init_params);
 	void randomInitialization();
+	void printClusters();
 	void executeKMeans();
 };
 

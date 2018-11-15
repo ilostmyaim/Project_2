@@ -42,39 +42,53 @@ void KMeans::randomInitialization()
 	ifstream inFile(_inputFile);
 	std::cout.precision(20);
 	item_t item;
-	if(inFile.is_open()) {
-		for(i=1; i<=this->_K; i++) {
-			inFile.seekg(0,ios::beg);
+	
+	for(i=1; i<=this->_K; i++) {
+		if(inFile.is_open()) {
 			item.id = (distribution(generator));
-			
+			cout << "item id: " << item.id << endl;
 			while(getline(inFile, line)){
 				line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
 				if(!line.empty()){
 					auto delimiterPos = line.find(",");
 					/*read vector id*/
 					string vector_id = line.substr(0,delimiterPos);
-					item.id = stoul(vector_id,nullptr,0);
 					/*read actual vector as a string from input file*/
 					string actualvector = line.substr(delimiterPos + 1);
 					string vector_value;
 					/*if id from input file matches generated id then make vector centroid*/
-					if(item.id == stoi(vector_id)){
+					if(item.id == stoul(vector_id,nullptr,0)){
 						stringstream stream(actualvector);
 						while(getline(stream,vector_value,',')){
 							/*convert values of vector from string to double*/
 							item.vec.push_back(stod(vector_value));
 						}
 						/*create cluster*/
-						Cluster clusterObject(this->_K,item );
+						Cluster clusterObject(i,item );
 						this->_clusters.push_back(clusterObject);
 						/*clear vector for next iteration*/
 						item.vec.clear();
+						break;
 					}
 				}
 			}
-			inFile.clear();
 		}
+		inFile.clear();
+		inFile.seekg(0,ios::beg);
 
+	}
+}
+
+void KMeans::printClusters()
+{
+	int i;
+	item_t item;
+	vector_t vec;
+	for(i=0;i<this->_K;i++) {
+		vec = _clusters[i].getCentroid();
+		cout << "Cluster: " << _clusters[i].getID() << endl;
+		cout << "Centroid: " << _clusters[i].getCentroidID() << endl;
+		print_vector(vec);
 	}
 }
 
