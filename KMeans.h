@@ -26,17 +26,19 @@ class KMeans {
 private: 
 	int _K; // number of cluster(subsets) for K-Means
 	int _max_iter;
-	long int _total_items; //number of items read from dataset
+	long int _totalItems; //number of items read from dataset
 	int _num_hash_functions;
 	int _num_hashtables;
-	std::string _input_file;
-	std::string _output_file;
-	std::string _conf_file;
+	std::vector<Cluster> _clusters;
+	std::string _inputFile;
+	std::string _outputfile;
+	std::string _confFile;
 	std::string _met; //metric
 
 
 public:
 	KMeans(init_params_t init_params);
+	void randomInitialization();
 	void executeKMeans();
 };
 

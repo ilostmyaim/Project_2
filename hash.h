@@ -14,6 +14,9 @@ const int DIMENSION(128);
 
 const int neighbours = 2;
 
+extern int seed;
+extern std::default_random_engine generator;
+
 typedef std::vector<double> vector_t;
 
 typedef struct item{

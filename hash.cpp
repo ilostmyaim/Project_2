@@ -16,8 +16,8 @@ using namespace std;
 using namespace std::chrono;
 
 using std::default_random_engine;
-
 int seed = time(0);
+
 default_random_engine generator(seed);
 
 Hash::Hash(int b,int k)
