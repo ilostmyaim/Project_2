@@ -31,6 +31,8 @@ int main(int argc, char **argv) {
 	KMeans KMeansObject(init_params);
 
 	KMeansObject.randomInitialization();
+
+	KMeansObject.executeKMeans();
 	KMeansObject.printClusters();
 
 	cout.rdbuf(coutbuf);
