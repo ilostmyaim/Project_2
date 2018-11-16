@@ -7,6 +7,7 @@
 #include <vector>
 #include <random>
 #include <list>
+#include <map>
 #include "hash.h"
 #include "Cluster.h"
 
@@ -14,6 +15,7 @@ typedef struct {
 	int K; //number of clusters
 	int number_of_hash_functions; //default: L=4
 	int number_of_hash_tables; //default: L=5
+	int max_iterations;
 	std::string input_file;
 	std::string output_file;
 	std::string conf_file;
@@ -29,6 +31,8 @@ private:
 	long int _totalItems; //number of items read from dataset
 	int _num_hash_functions;
 	int _num_hashtables;
+	int _max_iterations;
+	std::vector<item_t> _items; //points read from input file
 	std::vector<Cluster> _clusters;
 	std::string _inputFile;
 	std::string _outputfile;
@@ -40,7 +44,11 @@ public:
 	KMeans(init_params_t init_params);
 	void randomInitialization();
 	void printClusters();
-	void executeKMeans();
+	bool executeKMeans();
+	bool lloydsAssignment();
+	int getNearestCluster(item_t item);
+	bool updateMeans();
+	void computeMean(const std::multimap<int, const item_t*> &multimap, int clusterID, Cluster *cluster);
 };
 
 void initParametersKMeans(init_params_t *init_params, int argc, char **argv);
