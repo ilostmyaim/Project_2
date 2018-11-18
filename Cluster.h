@@ -24,6 +24,9 @@ public:
 	item_t getItem(int index);
 	int getTotalItems();
 	int getID();
+	int getCentroidSize();
 	unsigned int getCentroidID();
-
+	void add(const item_t &item);
+	void calculateFinal(int totalItems);
+	void insertItem(item_t item);
 };

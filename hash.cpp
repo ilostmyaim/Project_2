@@ -163,7 +163,7 @@ int Hash::getTableSize()
 double euclideanNorm(vector_t u, vector_t v)
 {
 	int i;
-	int sum = 0;
+	double sum = 0;
 	for(i = 0; i < (int)v.size(); i++){
 		sum = sum + pow(u[i]-v[i],2);
 	}
