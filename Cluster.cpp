@@ -17,6 +17,7 @@ Cluster::Cluster(int cluster_id, item_t item)
 {
 	this->_cluster_id = cluster_id;
 	this->_centroid_id = item.id;
+	this->_ai=0;
 	for(int i=0; i<(int)item.vec.size(); i++){
 		_centroid.push_back(item.vec[i]);	
 	}
@@ -30,7 +31,7 @@ void Cluster::addItem(item_t item)
 }
 */
 
-/*
+
 bool Cluster::removeItem(unsigned int item_id)
 {
 	for(int i=0;i<(int)_items.size();i++){
@@ -41,7 +42,7 @@ bool Cluster::removeItem(unsigned int item_id)
 	}
 	return false;
 }
-*/
+
 
 vector_t Cluster::getCentroid()
 {
@@ -53,19 +54,19 @@ void Cluster::setCentroidValue(int index, double value)
 	_centroid[index] = value;
 }
 
-/*
+
 item_t Cluster::getItem(int index)
 {
 	return _items[index];
 }
-*/
 
-/*
-int Cluster::getTotalItems()
+
+
+double Cluster::getTotalItems()
 {
-	return (int)_items.size();
+	return _items.size();
 }
-*/
+
 
 int Cluster::getID()
 {
@@ -98,4 +99,31 @@ void Cluster::calculateFinal(int totalItems)
 	}
 }
 
+/*insert item to cluster*/
+void Cluster::insertItem(item_t item)
+{
+	this->_items.push_back(item);
+}
 
+double Cluster::computeAvgDistance() //computes a(i) for a cluster
+{
+	int i,j;
+	double avgDist_a = 0;
+	double totalAvg_a = 0;
+	double ai=0;
+
+	for(i=0;i<_items.size();i++) {
+		avgDist_a = 0;
+		for(j=0;j<_items.size();j++) {
+			avgDist_a += euclideanNorm(_items[i].vec, _items[j].vec);
+		}
+		totalAvg_a = avgDist_a / double(_items.size());
+		_ai_values.push_back(totalAvg_a);
+	}
+	
+	for(i=0;i<_ai_values.size();i++){
+		_ai += _ai_values[i];
+	}
+
+	return (_ai / double(_ai_values.size()));
+}

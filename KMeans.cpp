@@ -48,6 +48,7 @@ KMeans::KMeans(init_params_t init_params)
 					item.vec.push_back(stod(vector_value));
 				}
 				/*add item to items collection of KMeans*/
+				item.cluster_id = -1;
 				_items.push_back(item);
 				/*clear vector for next iteration*/
 				item.vec.clear();
@@ -112,12 +113,12 @@ bool KMeans::executeKMeans()
 	for(iter=0; iter<_max_iterations; iter++) {
 		cout << "Iteration " << iter << endl;
 		//lloyds assignment
-		cout << "11111111111111111" << endl;
+		//cout << "11111111111111111" << endl;
 		bool changed = lloydsAssignment();
 		//kMeans update
-		cout << "22222222222222222" << endl;
+		//cout << "22222222222222222" << endl;
 		updateMeans();
-		cout << "33333333333333333" << endl;
+		//cout << "33333333333333333" << endl;
 		if(!changed) {
 			cout << "Convergence after " << iter << " iterations" << endl;
 			return true;
@@ -136,10 +137,24 @@ bool KMeans::lloydsAssignment()
 		int newCluster = getNearestCluster(item);
 
 		bool val = item.cluster_id != newCluster;
-		item.cluster_id = newCluster;
+		//if new cluster is different from the old one ,then remove item from old cluster
+		if(val == true ){
+			if(item.cluster_id == -1) { 
+				item.cluster_id = newCluster;
+				_clusters[item.cluster_id - 1].insertItem(item);
+			}
+			else {
+				_clusters[item.cluster_id - 1].removeItem(item.id);
+				item.cluster_id = newCluster;
+				_clusters[item.cluster_id - 1].insertItem(item);
+			}
+
+		}
+		//else do nothing
+		
 		changed = changed || val;
 
-		cout <<"Item: " << item.id << " assigned to cluster: " << item.cluster_id << endl;
+		//cout <<"Item: " << item.id << " assigned to cluster: " << item.cluster_id << endl;
 	}
 	return changed;
 }
@@ -171,7 +186,6 @@ bool KMeans::updateMeans()
 		auto newPair = std::pair<int, const item_t*>(item.cluster_id, &item);
 		itemClusterMap.insert(newPair);
 	}	
-	cout << "Mphka " << endl;
 	/*compute the mean for every cluster*/
 	int i;
 	for(i=0;i<_K;i++){
@@ -191,13 +205,13 @@ void KMeans::computeMean(const multimap<int, const item_t*> &multimap, int clust
 	auto currentCluster = multimap.equal_range(clusterID);
 	int totalItems = 0;
 
-	cout << "before calculate mean" << endl;
+	//cout << "before calculate mean" << endl;
 	/*calculate mean*/
 	for(auto iter=currentCluster.first; iter != currentCluster.second; iter++) {
 		cluster->add(*(iter->second));
 		totalItems++;
 	}
-	cout << "before final " << endl;
+	//cout << "before final " << endl;
 	cluster->calculateFinal(totalItems);
 
 }
@@ -210,9 +224,72 @@ void KMeans::printClusters()
 	for(i=0;i<this->_K;i++) {
 		vec = _clusters[i].getCentroid();
 		cout << "Cluster: " << _clusters[i].getID() << endl;
+		cout << "Number of items in cluster: " << _clusters[i].getTotalItems() << endl;
 		cout << "Centroid: " << _clusters[i].getCentroidID() << endl;
 		print_vector(vec);
 	}
+	cout << "Silhouette: " << this->_avgSilhouette << endl;;
+}
+
+double KMeans::computeSilhouette()
+{
+	double avgSil = 0,sum=0;
+	int i,j,ix,jx;
+	double avgDistSecond = 0;
+	double avgDist_b = 0,totalAvg_b = 0, bi = 0;
+	double minDist = 900000000000;
+	double minID ;
+	double dist = 0;
+	vector_t centroidNeighbor;
+	double clusterTotalItems;
+	double clusterTotalItemsNeighbor;
+	vector<double> bi_values;
+	item_t item;
+	for(i=0;i < _K ; i++) { //for each cluster
+		clusterTotalItems = _clusters[i].getTotalItems();
+		for(ix =  0;ix<clusterTotalItems;ix++){ //for every item in a cluster,calculate b(i)
+			avgDist_b = 0;
+			item = _clusters[i].getItem(ix);
+			for(j=0;j<_K;j++) { //find second nearest cluster
+				if(i != j){
+					centroidNeighbor = _clusters[j].getCentroid();
+					dist = euclideanNorm(item.vec,centroidNeighbor);
+					if(dist < minDist){
+						minDist = dist;
+						minID = j;
+					}
+				}
+			}
+			//after finding second nearest cluster ,calculate b(i)
+			//get second nearest centroid
+			centroidNeighbor = _clusters[minID].getCentroid();
+			clusterTotalItemsNeighbor = _clusters[minID].getTotalItems();
+			for(jx=0;jx<clusterTotalItemsNeighbor;jx++) {
+				avgDist_b += euclideanNorm(item.vec, _clusters[minID].getItem(jx).vec);
+			}
+			totalAvg_b = avgDist_b / clusterTotalItemsNeighbor;
+			bi_values.push_back(totalAvg_b);
+		}
+		//calculate average bi for cluster
+		for(j=0;j<bi_values.size();j++) {
+			bi += bi_values[j];
+		}
+
+		bi = bi / double(bi_values.size());
+		//average bi for each cluster
+		_bi.push_back(bi);
+		_ai.push_back(_clusters[i].computeAvgDistance());
+	}
+	
+	for(i=0;i<_K;i++) {
+		if(_ai[i] >= _bi[i]) {
+			sum += ((_bi[i] - _ai[i]) / _ai[i]);
+		}
+		else {
+			sum += ((_bi[i] - _ai[i]) / _bi[i]);
+		}
+	}
+	this->_avgSilhouette = sum / double(_K);
 }
 
 

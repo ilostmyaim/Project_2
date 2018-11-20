@@ -33,6 +33,7 @@ int main(int argc, char **argv) {
 	KMeansObject.randomInitialization();
 
 	KMeansObject.executeKMeans();
+	KMeansObject.computeSilhouette();
 	KMeansObject.printClusters();
 
 	cout.rdbuf(coutbuf);

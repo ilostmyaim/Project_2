@@ -38,7 +38,9 @@ private:
 	std::string _outputfile;
 	std::string _confFile;
 	std::string _met; //metric
-
+	double _avgSilhouette;
+	vector_t _bi;
+	vector_t _ai;
 
 public:
 	KMeans(init_params_t init_params);
@@ -49,6 +51,7 @@ public:
 	int getNearestCluster(item_t item);
 	bool updateMeans();
 	void computeMean(const std::multimap<int, const item_t*> &multimap, int clusterID, Cluster *cluster);
+	double computeSilhouette();
 };
 
 void initParametersKMeans(init_params_t *init_params, int argc, char **argv);

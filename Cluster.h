@@ -13,7 +13,9 @@ private:
 	int _cluster_id; //id of a cluster
 	unsigned int _centroid_id; //id of centroid
 	vector_t _centroid;
-
+	std::vector<item_t> _items;
+	std::vector<double> _ai_values; //used in silhouette
+	double _ai;
 public:
 	Cluster(int cluster_id, item_t item);
 	void addItem(item_t item);
@@ -21,10 +23,12 @@ public:
 	vector_t getCentroid();
 	void setCentroidValue(int index,double value);
 	item_t getItem(int index);
-	int getTotalItems();
+	double getTotalItems();
 	int getID();
 	int getCentroidSize();
 	unsigned int getCentroidID();
 	void add(const item_t &item);
 	void calculateFinal(int totalItems);
+	void insertItem(item_t item);
+	double computeAvgDistance(); //computes a(i)
 };
