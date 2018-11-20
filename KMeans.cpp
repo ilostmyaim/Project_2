@@ -225,9 +225,11 @@ void KMeans::printClusters()
 		vec = _clusters[i].getCentroid();
 		cout << "Cluster: " << _clusters[i].getID() << endl;
 		cout << "Number of items in cluster: " << _clusters[i].getTotalItems() << endl;
-		cout << "Centroid: " << _clusters[i].getCentroidID() << endl;
-		print_vector(vec);
+		//cout << "Centroid: " << _clusters[i].getCentroidID() << endl;
+		//print_vector(vec);
 	}
+	cout << "ai: " <<  _ai.size() << endl;
+	cout << "bi: " << _bi.size() << endl;
 	cout << "Silhouette: " << this->_avgSilhouette << endl;;
 }
 
@@ -247,41 +249,50 @@ double KMeans::computeSilhouette()
 	item_t item;
 	for(i=0;i < _K ; i++) { //for each cluster
 		clusterTotalItems = _clusters[i].getTotalItems();
-		for(ix =  0;ix<clusterTotalItems;ix++){ //for every item in a cluster,calculate b(i)
-			avgDist_b = 0;
-			item = _clusters[i].getItem(ix);
-			for(j=0;j<_K;j++) { //find second nearest cluster
-				if(i != j){
-					centroidNeighbor = _clusters[j].getCentroid();
-					dist = euclideanNorm(item.vec,centroidNeighbor);
-					if(dist < minDist){
-						minDist = dist;
-						minID = j;
+		if(clusterTotalItems > 0){ 
+			for(ix =  0;ix<clusterTotalItems;ix++){ //for every item in a cluster,calculate b(i)
+				avgDist_b = 0;
+				item = _clusters[i].getItem(ix);
+				for(j=0;j<_K;j++) { //find second nearest cluster
+					if(i != j){
+						centroidNeighbor = _clusters[j].getCentroid();
+						if(_clusters[j].getTotalItems() > 0) { //if cluster is not empty
+							dist = euclideanNorm(item.vec,centroidNeighbor);
+							if(dist < minDist){
+								minDist = dist;
+								minID = j;
+							}
+						}
 					}
 				}
+				//after finding second nearest cluster ,calculate b(i)
+				//get second nearest centroid
+				centroidNeighbor = _clusters[minID].getCentroid();
+				clusterTotalItemsNeighbor = _clusters[minID].getTotalItems();
+				for(jx=0;jx<clusterTotalItemsNeighbor;jx++) {
+					avgDist_b += euclideanNorm(item.vec, _clusters[minID].getItem(jx).vec);
+				}
+				totalAvg_b = avgDist_b / clusterTotalItemsNeighbor;
+				bi_values.push_back(totalAvg_b);
 			}
-			//after finding second nearest cluster ,calculate b(i)
-			//get second nearest centroid
-			centroidNeighbor = _clusters[minID].getCentroid();
-			clusterTotalItemsNeighbor = _clusters[minID].getTotalItems();
-			for(jx=0;jx<clusterTotalItemsNeighbor;jx++) {
-				avgDist_b += euclideanNorm(item.vec, _clusters[minID].getItem(jx).vec);
+			//calculate average bi for cluster
+			for(j=0;j<bi_values.size();j++) {
+				bi += bi_values[j];
 			}
-			totalAvg_b = avgDist_b / clusterTotalItemsNeighbor;
-			bi_values.push_back(totalAvg_b);
-		}
-		//calculate average bi for cluster
-		for(j=0;j<bi_values.size();j++) {
-			bi += bi_values[j];
-		}
+	
+			bi = bi / double(bi_values.size());
+			//average bi for each cluster
+			_bi.push_back(bi);
+			_ai.push_back(_clusters[i].computeAvgDistance());
 
-		bi = bi / double(bi_values.size());
-		//average bi for each cluster
-		_bi.push_back(bi);
-		_ai.push_back(_clusters[i].computeAvgDistance());
+		}
+		else{
+			cout << "empty cluster: " << i << endl;
+		}
+		
 	}
 	
-	for(i=0;i<_K;i++) {
+	for(i=0;i<this->_bi.size();i++) {
 		if(_ai[i] >= _bi[i]) {
 			sum += ((_bi[i] - _ai[i]) / _ai[i]);
 		}
@@ -289,7 +300,8 @@ double KMeans::computeSilhouette()
 			sum += ((_bi[i] - _ai[i]) / _bi[i]);
 		}
 	}
-	this->_avgSilhouette = sum / double(_K);
+	this->_avgSilhouette = sum / this->_ai.size();
+	return 0;
 }
 
 
