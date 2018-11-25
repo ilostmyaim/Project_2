@@ -21,6 +21,7 @@ Cluster::Cluster(int cluster_id, item_t item)
 	for(int i=0; i<(int)item.vec.size(); i++){
 		_centroid.push_back(item.vec[i]);	
 	}
+	//cout << "Centorid size " << _centroid.size() << endl;
 
 }
 

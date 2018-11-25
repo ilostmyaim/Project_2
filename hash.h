@@ -10,7 +10,7 @@
 
 enum Metric;
 
-const int DIMENSION(128);
+const int DIMENSION(204);
 
 const int neighbours = 2;
 
@@ -23,12 +23,13 @@ typedef struct item{
 	vector_t vec;
 	unsigned int id;
 	int cluster_id;
+	double distance;
 } item_t;
 
 class Hash {
 private:
 	int _tableSize;
-	int _w; //default value is 4
+	double _w; //default value is 4
 	vector_t vec_t; //keep offset t here
 	std::vector<vector_t > vec_v; //keep random vectors here(v for euclidean , ri for cosine)
 	std::list<item_t> *_hashTable;
@@ -42,12 +43,12 @@ public:
 	void insertItem(item_t item,unsigned int hashValue);
 	void displayHash();
 	int getTableSize();
-	void traverseBucket(vector_t, long int, double R,double C ,Metric metric);
+	std::vector<item_t> traverseBucket(vector_t, int cluster_id, long int, double R,double C ,Metric metric);
 	double nearestNeighborTraverse(vector_t q, long int hashValue, int L ,Metric metric);
 
-	long int hash(vector_t p);
-	long int cosineHash(vector_t p);
-	long int hashCUBE(vector_t p);
+	double hash(vector_t p);
+	double cosineHash(vector_t p);
+	double hashCUBE(vector_t p);
 	vector_t random_vector();
 	double random_offset();
 	std::string combine();

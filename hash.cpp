@@ -24,12 +24,12 @@ Hash::Hash(int b,int k)
 {
 	this->_tableSize = b;
 	//cout << "Hashtable size is: " << _tableSize << endl;
-	this->_w = 200; 
+	this->_w = 2; 
 	for(int i = 0;i<k;i++){
 		this->vec_t.push_back(random_offset());
 		this->vec_v.push_back(random_vector());
 	}
-
+	cout <<  "size: " << this->vec_t.size() << endl;
 	_hashTable = new list<item_t>[_tableSize];
 
 }
@@ -40,16 +40,30 @@ void Hash::insertItem(item_t item,unsigned int hashValue)
 }
 
 /*range search*/
-void Hash::traverseBucket(vector_t q, long int hashValue,double R, double C=1,Metric metric=euclidean)
+vector<item_t> Hash::traverseBucket(vector_t q, int cluster_id, long int hashValue,double R, double C=1,Metric metric=euclidean)
 {
 	double distance = 0;
+	vector<item_t> items;
 	//cout << "Range Search in Bucket["<<hashValue<<"]"<<endl;
-	for(auto x: _hashTable[hashValue]){
+	
+	for(auto &x: _hashTable[hashValue]){
 		/*calculate Eucledian deistance*/
 		if(metric == euclidean) { 
 			distance = euclideanNorm(q,x.vec);
 			if( distance < C*R){
-				cout << "Item: "<< x.id << " " << distance << endl;
+				if(x.cluster_id == -1){
+					x.cluster_id = cluster_id;
+					x.distance = distance;
+					items.push_back(x);
+				}
+				else if((x.cluster_id != -1) && (cluster_id != x.cluster_id)){ //if more than two centroid exist in bucket
+					if(distance < x.distance){
+						x.cluster_id = cluster_id;
+						x.distance = distance;
+						items.push_back(x);
+					}
+				}
+				//cout << "Item: "<< x.id << " " << distance << endl;
 				//cout << "distance: " << distance << endl;
 				//print_vector(x.vec);
 			}
@@ -57,12 +71,17 @@ void Hash::traverseBucket(vector_t q, long int hashValue,double R, double C=1,Me
 		else if(metric == cosine) {
 			distance = 1 -cosineSimilarity(q,x.vec);
 			if( distance < C*R){ 
-				cout << "Item: "<< x.id << " " << distance << endl;
+				if(x.cluster_id = -1){
+					x.cluster_id = cluster_id;
+					items.push_back(x);
+				}
+				//cout << "Item: "<< x.id << " " << distance << endl;
 				//cout << "cosine distance: " << distance << endl;
 				//print_vector(x.vec);
 			}
 		}	
 	}
+	return items;
 }
 /*Nearest Neighbor serach*/
 double Hash::nearestNeighborTraverse(vector_t q, long int hashValue, int L, Metric metric)
@@ -148,7 +167,7 @@ void Hash::displayHash()
 	for(int i = 0;i<this->_tableSize;i++){
 		cout << "Bucket["<<i<<"]"<<endl;
 		for(auto x: _hashTable[i]){
-			cout << " --> " << x.id;
+			cout << " --> " << x.id <<",cid: "<<x.cluster_id;
 		}
 		cout << endl;
 	}
@@ -187,9 +206,9 @@ double innerProduct(vector_t u, vector_t v)
 {
 	int i;
 	double sum = 0;
-	
 	for(i=0; i < (int)v.size(); i++ ){
 		sum = sum + u[i]*v[i];
+		//cout << "sum: " << sum << endl;
 	}
 
 	return sum;
@@ -198,26 +217,29 @@ double innerProduct(vector_t u, vector_t v)
 
 
 //generates g function 
-long int Hash::hash(vector_t p)
+double Hash::hash(vector_t p)
 {
-	long int value = 0;
-	long int sum = 0;
-	uniform_int_distribution<int> distribution(0,200);//initialize for R value
+	double value = 0;
+	double sum = 0;
+	uniform_int_distribution<int> distribution(0,500);//initialize for R value
 	for(int i=0;i<(int)this->vec_v.size();i++){ 
-		value = ((innerProduct(p, this->vec_v[i]) + vec_t[i]) / _w);
+		value = ((innerProduct(p, this->vec_v[i]) + vec_t[i]) / double(_w));
+		//value = value*100;
+		//cout << "value: " << value<< endl;
 		//sum of hi functions to create f
 		sum+= (distribution(generator) * value);
+		//cout << "sum: " << sum << endl;
 	}
 	//cout << "Sum is: " << sum << endl;
 	return sum;
 }
 
 //hash function for cosine similarity
-long int Hash::cosineHash(vector_t p)
+double Hash::cosineHash(vector_t p)
 {
-	long int value = 0;
+	double value = 0;
 	string hi;
-	long int hash_value = 0;
+	double hash_value = 0;
 	for(int i = 0; i<(int)this->vec_v.size();i++){
 		value = ((innerProduct(p, this->vec_v[i])));//according to theory
 		if(value >= 0){ //according to theory
@@ -234,10 +256,10 @@ long int Hash::cosineHash(vector_t p)
 
 }
 
-long int Hash::hashCUBE(vector_t p)
+double Hash::hashCUBE(vector_t p)
 {
-	long int value = 0;
-	long int sum = 0;
+	double value = 0;
+	double sum = 0;
 	string hi;
 	int one_zero = 0;
 	int found = 0;
@@ -285,7 +307,7 @@ vector_t Hash::random_vector()
 	vector_t vec_1;
 	int i;
 	double num = 0;
-	for(i=0; i< DIMENSION; i++){
+	for(i=0; i<DIMENSION; i++){
 		num = distribution(generator);
 		vec_1.push_back(num);
 	}
@@ -298,6 +320,7 @@ double Hash::random_offset()
 	uniform_int_distribution<int> distribution(0,_w); //according to theory
 	double t;
 	t = distribution(generator);
+	//cout << "t " << t <<endl;
 	return t;
 }
 
