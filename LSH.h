@@ -38,8 +38,9 @@ public:
 	std::string get_outputFile();
 	void setQueryFileName(std::string);
 	void executeLSH(Metric);
+	void insertAllItems(std::vector<item_t> &items,Metric metric);
 	void displayLSH();
-	void rangeSearch(vector_t q,double R, double C, Metric metric);
+	std::vector< std::vector<item_t> > rangeSearch(vector_t q, int cluster_id, double R, double C, Metric metric);
 	double nearestNeighbor(vector_t, Metric metric);
 	int sizeofLSH();
 

@@ -21,7 +21,9 @@ LSH::LSH(int k, int L, string inputFile, string outputFile, string queryFile,Met
 	/*initialize parameters*/
 	_k = k;
 	_L = L;
+	cout << "L " << _L << endl;
 	_inputFile = inputFile;
+	cout << "Input file " << _inputFile << endl;
 	_outputFile = outputFile;
 	_queryFile = queryFile;
 	_arrayOfHashTables = new Hash*[_L]; //create array of pointers to hashtables
@@ -33,7 +35,8 @@ LSH::LSH(int k, int L, string inputFile, string outputFile, string queryFile,Met
 			while(getline(inFile, line))
 				++count;
 		}
-		_hashTableSize = count / 8;
+		_hashTableSize = count / 200;
+		cout << "hashtable size " << _hashTableSize << endl;
 
 	}
 	else if(metric == cosine){ //for cosine ,table size is 2^k
@@ -57,144 +60,30 @@ LSH::~LSH()
 	delete[] _arrayOfHashTables;
 }
 
-//executes LSH 
-void LSH::executeLSH(Metric metric)
+void LSH::insertAllItems(vector<item_t> &items,Metric metric)
 {
-	//do stuff
-	int i_l=0; //counter for L and k respectively
-	double R=0; //radius
-	string tmp; //for query file
-	string line; //used in getline() for file parsing
-	double C=1;
-	double pValue=0,qValue=0; //read values from input file and query file here
-	vector_t vec; //store p_values to vec while reading
-	ifstream inputFile(_inputFile);// input file stream
-	ifstream queryFile(_queryFile);// query file stream
-	ofstream outputFile(_outputFile);
+	int j=0;
+	int i_l;
 	long int hash_value;
-	long double actualHashValue=0; 
-	static unsigned int vec_id = 0; // id for each vector readen
-	static unsigned int q_id = 0;
-	item_t item;
-	double max_ratio = -1.0; //max ratio
-	double ratio_item = 0.0; //ratio for each query
-	cout.precision(9);
-	
-	for(i_l=0;i_l<_L;i_l++){
-		//read vectors from input file and fill hashtables
-		if (inputFile.is_open()) {
-			while(getline(inputFile, line)) {
-				stringstream stream(line);
-				while(1){
-					stream >> pValue;
-					if(!stream)
-						break;
-					vec.push_back(pValue);
-				}
-				item.vec = vec;
-				vec_id++;
-				item.id = vec_id; 
-				//generate hash values for given metric
-				if(metric == euclidean){
-					hash_value = _arrayOfHashTables[i_l]->hash(vec);
-					actualHashValue = ((hash_value % M) + M) % _hashTableSize;
-				}
-				else{
-					hash_value = _arrayOfHashTables[i_l]->cosineHash(vec);
-					actualHashValue = hash_value;
-				}
-				///insert item to LSH structure
-				_arrayOfHashTables[i_l]->insertItem(item,actualHashValue);
-				//clear vec in order to read the next one
-				vec.clear();
-				
-			
-			}	
-
-		}
-		//reinitialize vec_id to zero after whole input file is read
-		vec_id = 0;
-		//clear inputFile and start reading again from the beginning for next table
-		inputFile.clear();
-		inputFile.seekg(0,ios::beg);
-		if(inputFile.bad()){
-			perror("error");
-		}		
-	
-	}// after filling the hashtables start reading the query file
-	if(queryFile.is_open()){ 
-		
-		vec.clear();
-		//read Radius
-		getline(queryFile, line);
-		stringstream stream(line);
-		stream >> tmp >> R;
-		cout << "Radius is: " << R << endl;
-
-		if(R == 0){ // find nearest neighbor
-			/*********** Nearest neighbor*********/
-			auto start = high_resolution_clock::now();
-			while(getline(queryFile, line)) {
-				while(line.length() < DIMENSION){
-					getline(queryFile, line);
-				}
-				stringstream stream(line);
-				while(1){
-					stream >> pValue;
-					if(!stream)
-						break;
-					vec.push_back(pValue);
-				}
-				cout << endl;
-				cout << "Query: " << q_id << endl;
-				cout << "Nearest neighbor method" << endl;
-				q_id++;
-				//get max ratio
-				ratio_item = nearestNeighbor(vec,metric);
-				if(ratio_item > max_ratio){
-					cout << "ratio_item: " << ratio_item << endl;
-					max_ratio = ratio_item;
-				}
-
-				vec.clear();
-				
+	long double actualHashValue=0;
+	if(metric == euclidean){
+		for(i_l=0;i_l<_L;i_l++){ //fill all hash tables with items
+			for(j=0;j<items.size();j++){ 
+				hash_value = _arrayOfHashTables[i_l]->hash(items[j].vec);
+				actualHashValue = ((hash_value % M) + M) % _hashTableSize;
+				_arrayOfHashTables[i_l]->insertItem(items[j],actualHashValue);
 			}
-			auto stop = high_resolution_clock::now();
-			duration<double> _duration= (stop-start);
-			//whole LSH process time
-			cout << "Time = " << _duration.count() << std::fixed << "seconds" << endl;
-		}
-		else {
-			/*********Range Search***********/
-			auto start = high_resolution_clock::now();
-			while(getline(queryFile, line)) {
-				while(line.length() < DIMENSION){
-					getline(queryFile, line);
-				}
-				stringstream stream(line);
-				while(1){
-					stream >> pValue;
-					if(!stream)
-						break;
-					vec.push_back(pValue);
-				}
-				cout << endl;
-				cout << "Query: " << q_id << endl;
-				cout << "R-near neighbors method "<< endl;
-				q_id++;
-				rangeSearch(vec,R,C,metric);
-				vec.clear();
-			}
-			auto stop = high_resolution_clock::now();
-			duration<double> _duration= (stop-start);
-			//whole LSH process time
-			cout << "Time = " << _duration.count() << std::fixed <<"seconds" << endl;
 		}
 	}
-	
-	cout << "Max_ratio: " << max_ratio << endl;
-	cout << "finished" << endl;
-
+	else{
+		for(i_l=0;i_l<_L;i_l++){
+			for(j=0;j<items.size();j++){ 
+				hash_value = _arrayOfHashTables[i_l]->cosineHash(items[j].vec);
+				actualHashValue = hash_value;
+				_arrayOfHashTables[i_l]->insertItem(items[j],actualHashValue);
+			}
+		}
+	}
 }
 
 //displays LSH structure
@@ -209,26 +98,33 @@ void LSH::displayLSH()
 }
 
 //Range search in given Radius
-void LSH::rangeSearch(vector_t q, double R, double C=1, Metric metric = euclidean)
+vector< vector<item_t> > LSH::rangeSearch(vector_t q, int cluster_id, double R, double C=1, Metric metric = euclidean)
 {
 	int i_l;
 	string hash_string;
 	long int hash_value;
-	long double actualHashValue=0; 
+	long double actualHashValue=0;
+	vector< vector<item_t> > items; 
+
 	if(metric == euclidean){ 
 		for(i_l = 0; i_l < _L; i_l++){ //for each array hash q vector and execute range search
 			hash_value = _arrayOfHashTables[i_l]->hash(q);
+			//print_vector(q);
+			//cout << "hash_value " << hash_value << endl;
 			actualHashValue = ((hash_value % M) + M) % _hashTableSize;
-			_arrayOfHashTables[i_l]->traverseBucket(q, actualHashValue, R, C , metric);
+			//cout << "actual hash_value " << actualHashValue << endl;
+			items.push_back(_arrayOfHashTables[i_l]->traverseBucket(q, cluster_id,actualHashValue, R, C , metric));
 		}
 	}
 	else{
 		for(i_l = 0; i_l < _L; i_l++){
 			hash_value = _arrayOfHashTables[i_l]->cosineHash(q);
 			actualHashValue = hash_value;
-			_arrayOfHashTables[i_l]->traverseBucket(q, actualHashValue, R, C , metric);
+			items.push_back(_arrayOfHashTables[i_l]->traverseBucket(q, cluster_id, actualHashValue, R, C , metric));
 		}
 	}
+	return items;
+
 }
 
 //NN and approximate NN search

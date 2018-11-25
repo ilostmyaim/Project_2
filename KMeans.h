@@ -9,6 +9,7 @@
 #include <list>
 #include <map>
 #include "hash.h"
+#include "LSH.h"
 #include "Cluster.h"
 
 typedef struct { 
@@ -20,6 +21,8 @@ typedef struct {
 	std::string output_file;
 	std::string conf_file;
 	std::string met; //metric
+
+	int init_choice, assign_choice, update_choice;
 }init_params_t;
 
 
@@ -35,10 +38,18 @@ private:
 	std::vector<item_t> _items; //points read from input file
 	std::vector<Cluster> _clusters;
 	std::string _inputFile;
-	std::string _outputfile;
+	std::string _outputFile;
 	std::string _confFile;
 	std::string _met; //metric
+	double _avgSilhouette;
+	vector_t _bi;
+	vector_t _ai;
 
+	LSH *_LSHObject;
+
+	int _initChoice;
+	int _assignChoice;
+	int _updateChoice;
 
 public:
 	KMeans(init_params_t init_params);
@@ -46,9 +57,12 @@ public:
 	void printClusters();
 	bool executeKMeans();
 	bool lloydsAssignment();
+	bool LSHAssignment();
+	double initialRangeLSH(Metric metric);
 	int getNearestCluster(item_t item);
 	bool updateMeans();
 	void computeMean(const std::multimap<int, const item_t*> &multimap, int clusterID, Cluster *cluster);
+	double computeSilhouette();
 };
 
 void initParametersKMeans(init_params_t *init_params, int argc, char **argv);
