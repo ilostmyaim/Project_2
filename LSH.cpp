@@ -105,7 +105,6 @@ vector< vector<item_t> > LSH::rangeSearch(vector_t q, int cluster_id, double R, 
 	long int hash_value;
 	long double actualHashValue=0;
 	vector< vector<item_t> > items; 
-
 	if(metric == euclidean){ 
 		for(i_l = 0; i_l < _L; i_l++){ //for each array hash q vector and execute range search
 			hash_value = _arrayOfHashTables[i_l]->hash(q);

@@ -29,9 +29,9 @@ public:
 	int get_probes();
 	std::string get_inputFile();
 	std::string get_outputFile();
-	int executeCUBE(Metric);
 	void displayCUBE();
-	void rangeSearch(vector_t q, double R, double C, Metric metric);
+	void insertAllItems(std::vector<item_t> &items,Metric metric);
+	std::vector< std::vector<item_t> >rangeSearch(vector_t q,int cluster_id ,double R, double C, Metric metric);
 	double nearestNeighbor(vector_t, Metric metric);
 
 };

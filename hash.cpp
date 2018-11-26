@@ -256,7 +256,7 @@ double Hash::cosineHash(vector_t p)
 
 }
 
-long int Hash::hashCUBE(vector_t p)
+double Hash::hashCUBE(vector_t p)
 {
 	double value = 0;
 	double sum = 0;

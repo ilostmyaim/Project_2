@@ -11,8 +11,8 @@ HEADERS=$(wildcard *.h)
 
 all:cluster
 
-cluster: Cluster.o KMeans.o hash.o cluster_.o LSH.o
-	$(CC) $(LFLAGS) Cluster.o KMeans.o hash.o cluster_.o LSH.o -o $@
+cluster: Cluster.o KMeans.o hash.o cluster_.o LSH.o CUBE.o
+	$(CC) $(LFLAGS) Cluster.o KMeans.o hash.o cluster_.o LSH.o CUBE.o -o $@
 
 clean: 
 	rm -rf *.o $(OUT)

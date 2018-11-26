@@ -48,7 +48,7 @@ public:
 
 	double hash(vector_t p);
 	double cosineHash(vector_t p);
-	long int hashCUBE(vector_t p);
+	double hashCUBE(vector_t p);
 	vector_t random_vector();
 	double random_offset();
 	std::string combine();

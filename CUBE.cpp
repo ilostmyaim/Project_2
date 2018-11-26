@@ -78,144 +78,6 @@ string CUBE::get_outputFile()
 	return this->_outputFile;
 }
 
-int CUBE::executeCUBE(Metric metric)
-{
-	double R=0;//radius
-	string tmp; //for query file
-	string line; //used in getline() for file parsing
-	double C=1;
-	double pValue=0,qValue=0; //read values from input file and query file here
-	vector_t vec; //store p_values to vec while reading
-	ifstream inputFile(_inputFile);// input file stream
-	ifstream queryFile(_queryFile);// query file stream
-	ofstream outputFile(_outputFile);
-	long int hash_value;
-	long double actualHashValue=0; 
-	static unsigned int vec_id = 0; // id for each vector readen
-	static unsigned int q_id = 0;
-	item_t item;
-	double max_ratio = -1.0; //max ratio
-	double ratio_item = 0.0; //ratio for each query
-	cout.precision(9);
-
-	if (inputFile.is_open()) {
-		//read vectors from input file and fill hashtables
-		while(getline(inputFile, line)) {
-			stringstream stream(line);
-			while(1){
-				stream >> pValue;
-				if(!stream)
-					break;
-				vec.push_back(pValue);
-			}
-			
-			
-			item.vec = vec;
-			vec_id++;
-			item.id = vec_id;
-			//generate hash values for given metric
-			if(metric == euclidean) {
-				hash_value = _hashTable->hashCUBE(vec);
-				actualHashValue = ((hash_value % M) + M) % _hashTableSize;
-			}
-			else{
-				hash_value = _hashTable->cosineHash(vec);
-				actualHashValue = hash_value;
-			}
-			///insert item to CUBE structure
-			_hashTable->insertItem(item, actualHashValue);
-			//clear vec in order to read the next one
-			vec.clear();
-		}
-
-		//reinitialize vec_id to zero
-		vec_id = 0;
-		//clear inputFile and start reading again from the beginning for next table
-		inputFile.clear();
-		inputFile.seekg(0,ios::beg);
-		if(inputFile.bad()){
-			perror("error");
-		}		
-
-	}
-
-	
-	// after filling the hashtables start reading the query file
-	cout.precision(9);
-	if(queryFile.is_open()){ 
-		vec.clear();
-		//read Radius
-		getline(queryFile, line);
-		stringstream stream(line);
-		stream >> tmp >> R;
-		cout << "Radius is: " << R << endl;
-		if(R == 0){ // find nearest neighbor
-			/*********** Nearest neighbor*********/
-			auto start = high_resolution_clock::now();
-			while(getline(queryFile, line)) {
-				while(line.length() < DIMENSION){
-					getline(queryFile, line);
-				}
-				stringstream stream(line);
-				while(1){
-					stream >> pValue;
-					if(!stream)
-						break;
-					vec.push_back(pValue);
-				}
-				
-				cout << endl;
-				cout << "Query: " << q_id << endl;
-				cout << "Nearest neighbor method" << endl;
-				q_id++;
-				//get max ratio
-				ratio_item = nearestNeighbor(vec,metric);
-				if(ratio_item > max_ratio){
-					cout << "ratio_item: " << ratio_item << endl;
-					max_ratio = ratio_item;
-				}
-				vec.clear();
-				
-			}
-			auto stop = high_resolution_clock::now();
-			duration<double> _duration= (stop-start);
-			//whole CUBE process time
-			cout << "Time = " << _duration.count() << std::fixed << "seconds" << endl;
-		}
-		else {
-			/*********Range Search***********/
-			auto start = high_resolution_clock::now();
-			while(getline(queryFile, line)) {
-				while(line.length() < DIMENSION){
-					getline(queryFile, line);
-				}
-				stringstream stream(line);
-				while(1){
-					stream >> pValue;
-					if(!stream)
-						break;
-					vec.push_back(pValue);
-				}
-				
-				cout << endl;
-				cout << "Query: " << q_id << endl;
-				cout << "R-near neighbors method "<< endl;
-				q_id++;
-				rangeSearch(vec,R,C,metric);
-				vec.clear();
-			}
-			auto stop = high_resolution_clock::now();
-			duration<double> _duration= (stop-start);
-			//whole LSH process time
-			cout << "Time = " << _duration.count() << std::fixed << "seconds" << endl;
-		}
-	}
-		
-
-	cout << "Max_ratio: " << max_ratio << endl;
-	cout << "finished" << endl;
-	return 0;
-}
 
 //displays CUBE structure
 void CUBE::displayCUBE()
@@ -226,7 +88,7 @@ void CUBE::displayCUBE()
 }
 
 //Range search in given Radius
-void CUBE::rangeSearch(vector_t q, double R, double C=1, Metric metric = euclidean)
+vector< vector<item_t> > CUBE::rangeSearch(vector_t q, int cluster_id,double R, double C=1, Metric metric = euclidean)
 {
 	int i_l;
 	string hash_string;
@@ -235,16 +97,17 @@ void CUBE::rangeSearch(vector_t q, double R, double C=1, Metric metric = euclide
 	long int tmp_hash;
 	int tmp_probes;
 	tmp_probes = this->_probes; 
+	vector< vector<item_t> > items; 
 	if(metric == euclidean){ 
 		hash_value = _hashTable->hashCUBE(q);
 		actualHashValue = ((hash_value % M) + M) % _hashTableSize;
-		_hashTable->traverseBucket(q, actualHashValue, R, C , metric);
+		items.push_back(_hashTable->traverseBucket(q,cluster_id ,actualHashValue, R, C , metric));
 		
 		tmp_probes--;
 		tmp_hash = actualHashValue - 1;
 		while(tmp_probes > 0){ //start checking left neighbor buckets first
 			if(tmp_hash >= 0){
-				_hashTable->traverseBucket(q,tmp_hash, R,C,metric);
+				items.push_back(_hashTable->traverseBucket(q, cluster_id ,actualHashValue, R, C , metric));
 				tmp_probes--;
 				tmp_hash--;
 			}
@@ -255,7 +118,7 @@ void CUBE::rangeSearch(vector_t q, double R, double C=1, Metric metric = euclide
 		tmp_hash = actualHashValue + 1;
 		while(tmp_probes > 0){ //start checking right neighbor buckets,if there are no more left neighbor buckets
 			if(tmp_hash < this->_hashTableSize){
-				_hashTable->traverseBucket(q,tmp_hash, R,C,metric);
+				items.push_back(_hashTable->traverseBucket(q,cluster_id , actualHashValue, R, C , metric));
 				tmp_probes--;
 				tmp_hash++;
 			}
@@ -267,12 +130,12 @@ void CUBE::rangeSearch(vector_t q, double R, double C=1, Metric metric = euclide
 	else{//cosine
 		hash_value = _hashTable->cosineHash(q);
 		actualHashValue = hash_value;
-		_hashTable->traverseBucket(q, actualHashValue, R, C , metric);
+		items.push_back(_hashTable->traverseBucket(q,cluster_id , actualHashValue, R, C , metric));
 		tmp_probes--;
 		tmp_hash = actualHashValue - 1;
 		while(tmp_probes > 0){ //start checking left neighbor buckets
 			if(tmp_hash >= 0){
-				_hashTable->traverseBucket(q, actualHashValue, R, C , metric);
+				items.push_back(_hashTable->traverseBucket(q, cluster_id ,actualHashValue, R, C , metric));
 				tmp_probes--;
 				tmp_hash--;
 			}
@@ -283,7 +146,7 @@ void CUBE::rangeSearch(vector_t q, double R, double C=1, Metric metric = euclide
 		tmp_hash = actualHashValue + 1;
 		while(tmp_probes > 0){ //start checking righ neighbor buckets
 			if(tmp_hash < this->_hashTableSize){
-				_hashTable->traverseBucket(q, actualHashValue, R, C , metric);
+				items.push_back(_hashTable->traverseBucket(q, cluster_id ,actualHashValue, R, C , metric));
 				tmp_probes--;
 				tmp_hash++;
 			}
@@ -292,8 +155,22 @@ void CUBE::rangeSearch(vector_t q, double R, double C=1, Metric metric = euclide
 			}
 		}
 	}
+	return items;
 }
 
+void CUBE::insertAllItems(vector<item_t> &items,Metric metric)
+{
+	int j=0;
+	long int hash_value;
+	long double actualHashValue=0;
+	if(metric == euclidean){
+		for(j=0;j<items.size();j++){
+		 hash_value = _hashTable->hashCUBE(items[j].vec);
+		 actualHashValue = ((hash_value % M) + M) % _hashTableSize;
+		 _hashTable->insertItem(items[j], actualHashValue);
+		}
+	}
+}
 
 //NN and approximate NN search
 double CUBE::nearestNeighbor(vector_t q,Metric metric)

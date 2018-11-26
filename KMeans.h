@@ -11,6 +11,7 @@
 #include "hash.h"
 #include "LSH.h"
 #include "Cluster.h"
+#include "CUBE.h"
 
 typedef struct { 
 	int K; //number of clusters
@@ -22,7 +23,7 @@ typedef struct {
 	std::string conf_file;
 	std::string met; //metric
 
-	int init_choice, assign_choice, update_choice;
+	int init_choice, assign_choice, update_choice,probes,MC;
 }init_params_t;
 
 
@@ -46,10 +47,13 @@ private:
 	vector_t _ai;
 
 	LSH *_LSHObject;
+	CUBE *_CUBEObject;
 
 	int _initChoice;
 	int _assignChoice;
 	int _updateChoice;
+	int _MC;
+	int _probes;
 
 public:
 	KMeans(init_params_t init_params);
@@ -58,6 +62,7 @@ public:
 	bool executeKMeans();
 	bool lloydsAssignment();
 	bool LSHAssignment();
+	bool CUBEAssignment();
 	double initialRangeLSH(Metric metric);
 	int getNearestCluster(item_t item);
 	bool updateMeans();
