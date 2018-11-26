@@ -22,6 +22,7 @@ public:
 	bool removeItem(unsigned int item_id);
 	vector_t getCentroid();
 	void setCentroidValue(int index,double value);
+	void setCentroid(vector_t vec);
 	item_t getItem(int index);
 	double getTotalItems();
 	int getID();

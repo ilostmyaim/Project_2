@@ -55,6 +55,10 @@ void Cluster::setCentroidValue(int index, double value)
 	_centroid[index] = value;
 }
 
+void Cluster::setCentroid(vector_t vec)
+{
+	_centroid = vec;
+}
 
 item_t Cluster::getItem(int index)
 {

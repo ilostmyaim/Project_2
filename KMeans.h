@@ -67,6 +67,7 @@ public:
 	int getNearestCluster(item_t item,Metric metric);
 	bool updateMeans();
 	void computeMean(const std::multimap<int, const item_t*> &multimap, int clusterID, Cluster *cluster);
+	bool improvedLloydsUpdate();
 	double computeSilhouette();
 };
 

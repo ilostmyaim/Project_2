@@ -173,6 +173,9 @@ bool KMeans::executeKMeans()
 			//cout << "22222222222222222" << endl;
 			updateMeans();
 		}
+		else if(_updateChoice == 2){
+			improvedLloydsUpdate();
+		}
 		//cout << "33333333333333333" << endl;
 		/*
 		if(!changed) {
@@ -490,6 +493,62 @@ void KMeans::computeMean(const multimap<int, const item_t*> &multimap, int clust
 
 }
 
+//improved like Lloyds
+bool KMeans::improvedLloydsUpdate()
+{
+	Metric metric;
+	if(this->_met.compare("euclidean") == 0){
+		metric = euclidean;
+	}
+	else{
+		metric = cosine;
+	}
+	double sum = 0;
+	double minsum = 9999999;
+	vector_t medoid;
+	item_t item_j,item_j_j;
+	if(metric == euclidean){ 
+		for(int i=0;i<_K;i++) { //for every cluster,calculate objective function
+			minsum = 9999999;
+			for(int j=0;j<_clusters[i].getTotalItems();j++){//for every item in cluster
+				sum = 0;
+				item_j = _clusters[i].getItem(j);
+				for(int j_j=0;j_j < _clusters[i].getTotalItems();j_j++) {
+					item_j_j = _clusters[i].getItem(j_j);
+					if(j != j_j){
+						sum += euclideanNorm(item_j.vec,item_j_j.vec);
+					}
+				}
+				if(sum < minsum){
+					minsum = sum;
+					medoid = item_j.vec;
+				}
+			}
+			_clusters[i].setCentroid(medoid);
+		}
+	}
+	else{
+		for(int i=0;i<_K;i++) { //for every cluster,calculate objective function
+			minsum = 9999999;
+			for(int j=0;j<_clusters[i].getTotalItems();j++){//for every item in cluster
+				sum = 0;
+				item_j = _clusters[i].getItem(j);
+				for(int j_j=0;j_j < _clusters[i].getTotalItems();j_j++) {
+					item_j_j = _clusters[i].getItem(j_j);
+					if(j != j_j){
+						sum += (1-cosineSimilarity(item_j.vec,item_j_j.vec));
+					}
+				}
+				if(sum < minsum){
+					minsum = sum;
+					medoid = item_j.vec;
+				}
+			}
+			_clusters[i].setCentroid(medoid);
+		}
+	}
+	return true;
+}
 void KMeans::printClusters()
 {
 	int i;
