@@ -75,6 +75,13 @@ vector<item_t> Hash::traverseBucket(vector_t q, int cluster_id, long int hashVal
 					x.cluster_id = cluster_id;
 					items.push_back(x);
 				}
+				else if((x.cluster_id != -1) && (cluster_id != x.cluster_id)){ //if more than two centroid exist in bucket
+					if(distance < x.distance){
+						x.cluster_id = cluster_id;
+						x.distance = distance;
+						items.push_back(x);
+					}
+				}
 				//cout << "Item: "<< x.id << " " << distance << endl;
 				//cout << "cosine distance: " << distance << endl;
 				//print_vector(x.vec);

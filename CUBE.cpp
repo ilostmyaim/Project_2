@@ -170,6 +170,13 @@ void CUBE::insertAllItems(vector<item_t> &items,Metric metric)
 		 _hashTable->insertItem(items[j], actualHashValue);
 		}
 	}
+	else{
+		for(j=0;j<items.size();j++){
+		 hash_value = _hashTable->cosineHash(items[j].vec);
+		 actualHashValue = ((hash_value % M) + M) % _hashTableSize;
+		 _hashTable->insertItem(items[j], actualHashValue);
+		}
+	}
 }
 
 //NN and approximate NN search

@@ -134,6 +134,12 @@ bool KMeans::executeKMeans()
 	int iter;
 	cout << "KMeans" << endl;
 	bool changed;
+	Metric metric;
+	if(_met.compare("euclidean") == 0){
+		metric = euclidean;
+	}
+	else 
+		metric = cosine;
 	for(iter=0; iter<_max_iterations; iter++) {
 		cout << "Iteration " << iter << endl;
 		//assignment
@@ -174,6 +180,27 @@ bool KMeans::executeKMeans()
 		*/
 		
 	}
+
+	if(_assignChoice == 2 || _assignChoice == 3){ 
+		double mindist=99999999;
+		double dist =0;
+		/*assign every unassigned point*/
+		if(metric == euclidean){ 
+			for(auto &item_ : _items) {
+				if(item_.cluster_id == -1){ 
+					for(int i=0;i<_K;i++){
+						dist=euclideanNorm(item_.vec,_clusters[i].getCentroid());
+						if(dist < mindist){
+							mindist = dist;
+							item_.distance = mindist;
+							item_.cluster_id = _clusters[i].getID();
+							_clusters[item_.cluster_id - 1].insertItem(item_);
+						}
+					}
+				}
+			}
+		}
+	}
 	cout << "finished " << endl;
 	return false;
 }
@@ -183,10 +210,16 @@ bool KMeans::lloydsAssignment()
 {
 	bool changed = false;
 	int i;
+	Metric metric;
+	if(_met.compare("euclidean") == 0){
+		metric = euclidean;
+	}
+	else 
+		metric = cosine;
 	/*iterate over all points,
 	find the nearest cluster and assign*/
 	for(auto &item : _items) {
-		int newCluster = getNearestCluster(item);
+		int newCluster = getNearestCluster(item,metric);
 
 		bool val = item.cluster_id != newCluster;
 		//if new cluster is different from the old one ,then remove item from old cluster
@@ -211,19 +244,32 @@ bool KMeans::lloydsAssignment()
 	return changed;
 }
 
-int KMeans::getNearestCluster(item_t item)
+int KMeans::getNearestCluster(item_t item,Metric metric)
 {
 	double sum = 0.0, min_dist=100000000;
 	int min_cluster = -1;
 	int i;
 	//print_vector(item.vec);
-	for(i = 0;i<_K;i++){
-		double dist=euclideanNorm(item.vec,_clusters[i].getCentroid());
-		//cout << "Distance is " << dist << endl;
-		if(dist < min_dist) {
-			min_dist = dist;
-			min_cluster = _clusters[i].getID();
-			//cout << "min cluster: " << min_cluster << endl; 
+	if(metric == euclidean){ 
+		for(i = 0;i<_K;i++){
+			double dist=euclideanNorm(item.vec,_clusters[i].getCentroid());
+			//cout << "Distance is " << dist << endl;
+			if(dist < min_dist) {
+				min_dist = dist;
+				min_cluster = _clusters[i].getID();
+				//cout << "min cluster: " << min_cluster << endl; 
+			}
+		}
+	}
+	else{
+		for(i = 0;i<_K;i++){
+			double dist=cosineSimilarity(item.vec,_clusters[i].getCentroid());
+			//cout << "Distance is " << dist << endl;
+			if(dist < min_dist) {
+				min_dist = dist;
+				min_cluster = _clusters[i].getID();
+				//cout << "min cluster: " << min_cluster << endl; 
+			}
 		}
 	}
 
@@ -288,25 +334,6 @@ bool KMeans::LSHAssignment()
 		}
 		
 		initialRange = initialRange*2;
-	}
-
-	double mindist=99999999;
-	double dist =0;
-	/*assign every unassigned point*/
-	if(metric == euclidean){ 
-		for(auto &item_ : _items) {
-			if(item_.cluster_id == -1){ 
-				for(int i=0;i<_K;i++){
-					dist=euclideanNorm(item_.vec,_clusters[i].getCentroid());
-					if(dist < mindist){
-						mindist = dist;
-						item_.distance = mindist;
-						item_.cluster_id = _clusters[i].getID();
-						_clusters[item_.cluster_id - 1].insertItem(item_);
-					}
-				}
-			}
-		}
 	}
 
 
@@ -382,24 +409,6 @@ bool KMeans::CUBEAssignment()
 		initialRange = initialRange*2;
 	}
 
-	double mindist=99999999;
-	double dist =0;
-	/*assign every unassigned point*/
-	if(metric == euclidean){ 
-		for(auto &item_ : _items) {
-			if(item_.cluster_id == -1){ 
-				for(int i=0;i<_K;i++){
-					dist=euclideanNorm(item_.vec,_clusters[i].getCentroid());
-					if(dist < mindist){
-						mindist = dist;
-						item_.distance = mindist;
-						item_.cluster_id = _clusters[i].getID();
-						_clusters[item_.cluster_id - 1].insertItem(item_);
-					}
-				}
-			}
-		}
-	}
 	return true;
 }
 //K-means update

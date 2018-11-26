@@ -64,7 +64,7 @@ public:
 	bool LSHAssignment();
 	bool CUBEAssignment();
 	double initialRangeLSH(Metric metric);
-	int getNearestCluster(item_t item);
+	int getNearestCluster(item_t item,Metric metric);
 	bool updateMeans();
 	void computeMean(const std::multimap<int, const item_t*> &multimap, int clusterID, Cluster *cluster);
 	double computeSilhouette();
