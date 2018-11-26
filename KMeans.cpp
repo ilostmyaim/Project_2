@@ -67,18 +67,20 @@ KMeans::KMeans(init_params_t init_params)
 		}
 	}
 	Metric metric;
-	if(_met.compare("euclidean") == 0){ 
+	if(_met.compare("euclidean") == 0)
 		metric = euclidean;
+	else
+		metric = cosine;
 		if(_assignChoice == 2){ //if lsh update is selected insert points to hash table
-			cout << "Yasss" << endl;
+			cout << "LSH Assignment" << endl;
 			_LSHObject = new LSH(init_params.number_of_hash_functions, init_params.number_of_hash_tables, init_params.input_file, init_params.output_file, init_params.output_file, metric);
 			_LSHObject->insertAllItems(_items,metric);
 		}
 		else if(_assignChoice == 3) {//cube assignment
+			cout << "CUBE Assignment" << endl;
 			_CUBEObject = new CUBE(init_params.number_of_hash_functions,_MC,_probes,init_params.input_file, init_params.output_file, init_params.output_file, metric);
 			_CUBEObject->insertAllItems(_items,metric);
 		}
-	}
 	cout << "Total items: " << this->_totalItems << endl;
 }
 
@@ -182,21 +184,46 @@ bool KMeans::executeKMeans()
 	}
 
 	if(_assignChoice == 2 || _assignChoice == 3){ 
-		double mindist=99999999;
 		double dist =0;
+		double mindist=99999999;
 		/*assign every unassigned point*/
 		if(metric == euclidean){ 
+			cout << "Remaining euclidean" << endl;
 			for(auto &item_ : _items) {
 				if(item_.cluster_id == -1){ 
+					cout <<"Before: "<< item_.cluster_id << " ";
 					for(int i=0;i<_K;i++){
 						dist=euclideanNorm(item_.vec,_clusters[i].getCentroid());
 						if(dist < mindist){
 							mindist = dist;
 							item_.distance = mindist;
 							item_.cluster_id = _clusters[i].getID();
-							_clusters[item_.cluster_id - 1].insertItem(item_);
+							cout << "Mid: " << item_.cluster_id << " ";
 						}
 					}
+					_clusters[item_.cluster_id - 1].insertItem(item_);
+					mindist=99999999;
+					cout << "After: " << item_.cluster_id << endl;
+				}
+			}
+		}
+		else{
+			cout << "Remaining cosine" << endl;
+			for(auto &item_ : _items) {
+				if(item_.cluster_id == -1){ 
+					cout <<"Before: "<< item_.cluster_id << " ";
+					for(int i=0;i<_K;i++){
+						dist=1-cosineSimilarity(item_.vec,_clusters[i].getCentroid());
+						if(dist < mindist){
+							mindist = dist;
+							item_.distance = mindist;
+							item_.cluster_id = _clusters[i].getID();
+							cout << "Mid: " << item_.cluster_id << " ";
+						}
+					}
+					_clusters[item_.cluster_id - 1].insertItem(item_);
+					mindist=99999999;
+					cout << "After: " << item_.cluster_id << endl;
 				}
 			}
 		}
@@ -263,7 +290,7 @@ int KMeans::getNearestCluster(item_t item,Metric metric)
 	}
 	else{
 		for(i = 0;i<_K;i++){
-			double dist=cosineSimilarity(item.vec,_clusters[i].getCentroid());
+			double dist=1-cosineSimilarity(item.vec,_clusters[i].getCentroid());
 			//cout << "Distance is " << dist << endl;
 			if(dist < min_dist) {
 				min_dist = dist;
@@ -349,6 +376,16 @@ double KMeans::initialRangeLSH(Metric metric)
 		for (int i = 0; i < _clusters.size()-1;i++){
 			for (int j = i+1; j < _clusters.size(); j++){
 				distance = euclideanNorm(_clusters[i].getCentroid(),_clusters[j].getCentroid());
+				if(distance < minDistance){
+					minDistance = distance;
+				}
+			}
+		}
+	}
+	else{
+		for (int i = 0; i < _clusters.size()-1;i++){
+			for (int j = i+1; j < _clusters.size(); j++){
+				distance = 1-cosineSimilarity(_clusters[i].getCentroid(),_clusters[j].getCentroid());
 				if(distance < minDistance){
 					minDistance = distance;
 				}
@@ -487,6 +524,13 @@ double KMeans::computeSilhouette()
 	double clusterTotalItemsNeighbor;
 	vector<double> bi_values;
 	item_t item;
+	Metric metric;
+	if(this->_met.compare("euclidean") == 0){
+		metric = euclidean;
+	}
+	else{
+		metric = cosine;
+	}
 	for(i=0;i < _K ; i++) { //for each cluster
 		//cout << "outer _K: " << i << " ";
 		//cout << "Cluster " << i << endl;
@@ -502,7 +546,10 @@ double KMeans::computeSilhouette()
 						//cout <<"i: " << i << " j: " << j << " ";
 						centroidNeighbor = _clusters[j].getCentroid();
 						if(_clusters[j].getTotalItems() > 0) { //if cluster is not empty
-							dist = euclideanNorm(item.vec,centroidNeighbor);
+							if(metric == euclidean)
+								dist = euclideanNorm(item.vec,centroidNeighbor);
+							else 
+								dist = (1-cosineSimilarity(item.vec,centroidNeighbor));
 							if(dist < minDist){
 								minDist = dist;
 								minID = j;
@@ -516,8 +563,15 @@ double KMeans::computeSilhouette()
 				//cout << "Neighbor: " << minID << " " ;
 				clusterTotalItemsNeighbor = _clusters[minID].getTotalItems();
 				//cout << "clusterTotalItemsNeighbor " << clusterTotalItemsNeighbor << endl;
-				for(jx=0;jx<clusterTotalItemsNeighbor;jx++) {
-					avgDist_b += euclideanNorm(item.vec, _clusters[minID].getItem(jx).vec);
+				if(metric == euclidean){ 
+					for(jx=0;jx<clusterTotalItemsNeighbor;jx++) {
+						avgDist_b += euclideanNorm(item.vec, _clusters[minID].getItem(jx).vec);
+					}
+				}
+				else{
+					for(jx=0;jx<clusterTotalItemsNeighbor;jx++) {
+						avgDist_b += (1-cosineSimilarity(item.vec, _clusters[minID].getItem(jx).vec));
+					}
 				}
 				totalAvg_b = avgDist_b / clusterTotalItemsNeighbor;
 				bi_values.push_back(totalAvg_b);
@@ -531,7 +585,7 @@ double KMeans::computeSilhouette()
 			//cout << "bi: " << bi << " " ;
 			//average bi for each cluster
 			_bi.push_back(bi);
-			_ai.push_back(_clusters[i].computeAvgDistance());
+			_ai.push_back(_clusters[i].computeAvgDistance(metric));
 
 		}
 		else{

@@ -106,21 +106,33 @@ void Cluster::insertItem(item_t item)
 	this->_items.push_back(item);
 }
 
-double Cluster::computeAvgDistance() //computes a(i) for a cluster
+double Cluster::computeAvgDistance(Metric metric) //computes a(i) for a cluster
 {
 	int i,j;
 	double avgDist_a = 0;
 	double totalAvg_a = 0;
 	double ai=0;
-
-	for(i=0;i<_items.size();i++) {
-		avgDist_a = 0;
-		for(j=0;j<_items.size();j++) {
-			avgDist_a += euclideanNorm(_items[i].vec, _items[j].vec);
+	if(metric == euclidean) { 
+		for(i=0;i<_items.size();i++) {
+			avgDist_a = 0;
+			for(j=0;j<_items.size();j++) {
+				avgDist_a += euclideanNorm(_items[i].vec, _items[j].vec);
+			}
+			totalAvg_a = avgDist_a / double(_items.size());
+			_ai_values.push_back(totalAvg_a);
 		}
-		totalAvg_a = avgDist_a / double(_items.size());
-		_ai_values.push_back(totalAvg_a);
 	}
+	else{
+		for(i=0;i<_items.size();i++) {
+			avgDist_a = 0;
+			for(j=0;j<_items.size();j++) {
+				avgDist_a += (1-cosineSimilarity(_items[i].vec, _items[j].vec));
+			}
+			totalAvg_a = avgDist_a / double(_items.size());
+			_ai_values.push_back(totalAvg_a);
+		}
+	}
+	
 	
 	for(i=0;i<_ai_values.size();i++){
 		_ai += _ai_values[i];

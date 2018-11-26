@@ -21,7 +21,7 @@ LSH::LSH(int k, int L, string inputFile, string outputFile, string queryFile,Met
 	/*initialize parameters*/
 	_k = k;
 	_L = L;
-	cout << "L " << _L << endl;
+	//cout << "L " << _L << endl;
 	_inputFile = inputFile;
 	cout << "Input file " << _inputFile << endl;
 	_outputFile = outputFile;
@@ -36,7 +36,7 @@ LSH::LSH(int k, int L, string inputFile, string outputFile, string queryFile,Met
 				++count;
 		}
 		_hashTableSize = count / 200;
-		cout << "hashtable size " << _hashTableSize << endl;
+		//cout << "hashtable size " << _hashTableSize << endl;
 
 	}
 	else if(metric == cosine){ //for cosine ,table size is 2^k

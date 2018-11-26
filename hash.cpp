@@ -29,7 +29,6 @@ Hash::Hash(int b,int k)
 		this->vec_t.push_back(random_offset());
 		this->vec_v.push_back(random_vector());
 	}
-	cout <<  "size: " << this->vec_t.size() << endl;
 	_hashTable = new list<item_t>[_tableSize];
 
 }

@@ -30,5 +30,5 @@ public:
 	void add(const item_t &item);
 	void calculateFinal(int totalItems);
 	void insertItem(item_t item);
-	double computeAvgDistance(); //computes a(i)
+	double computeAvgDistance(Metric metric); //computes a(i)
 };
