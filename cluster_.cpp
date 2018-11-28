@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 	initParametersKMeans(&init_params, argc, argv);
 
 	ofstream outputFile(init_params.output_file);
-	//streambuf *coutbuf = cout.rdbuf();
+	streambuf *coutbuf = cout.rdbuf();
 	//cout.rdbuf(outputFile.rdbuf());
 
 	KMeans KMeansObject(init_params);

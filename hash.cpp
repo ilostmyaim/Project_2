@@ -333,7 +333,6 @@ double Hash::random_offset()
 //displays a vector
 void print_vector(vector_t v)
 {
-	cout << "vector: ";
 	for(int i = 0;i<(int)v.size();i++){
 		cout << v[i] << " ";
 	}

@@ -24,6 +24,7 @@ typedef struct {
 	std::string met; //metric
 
 	int init_choice, assign_choice, update_choice,probes,MC;
+	bool complete=false;
 }init_params_t;
 
 
@@ -45,6 +46,8 @@ private:
 	double _avgSilhouette;
 	vector_t _bi;
 	vector_t _ai;
+	vector_t _si; //average si for each cluster
+	std::chrono::duration<double> _duration;// execution time of kmeans
 
 	LSH *_LSHObject;
 	CUBE *_CUBEObject;
@@ -54,6 +57,7 @@ private:
 	int _updateChoice;
 	int _MC;
 	int _probes;
+	bool _complete;
 
 public:
 	KMeans(init_params_t init_params);

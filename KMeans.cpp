@@ -33,6 +33,7 @@ KMeans::KMeans(init_params_t init_params)
 	this-> _num_hashtables = init_params.number_of_hash_tables;
 	this->_MC = init_params.MC;
 	this->_probes = init_params.probes;
+	this->_complete = init_params.complete;
 
 	/*raed  total number of vectors from input file*/
 	this->_totalItems = 0;
@@ -81,7 +82,8 @@ KMeans::KMeans(init_params_t init_params)
 			_CUBEObject = new CUBE(init_params.number_of_hash_functions,_MC,_probes,init_params.input_file, init_params.output_file, init_params.output_file, metric);
 			_CUBEObject->insertAllItems(_items,metric);
 		}
-	cout << "Total items: " << this->_totalItems << endl;
+		else
+			cout << "Lloyd's Assignment" << endl;
 }
 
 //Random selection of k points(simplest)
@@ -93,10 +95,29 @@ void KMeans::randomInitialization()
 	ifstream inFile(_inputFile);
 	std::cout.precision(20);
 	item_t item;
+	vector_t initvector;
+	int flag = 0;
+	int j_j=0;
 	
 	for(i=1; i<=this->_K; i++) {
 		if(inFile.is_open()) {
 			item.id = (distribution(generator));
+			for(int j=0;j<initvector.size();j++){
+				if(item.id == initvector[j]){
+					flag =1;
+					while(flag == 1){
+						flag = 0;
+						item.id = (distribution(generator));
+						for(int j_j=0;j_j<initvector.size();j_j++){
+							if(item.id == initvector[j_j]){
+								flag = 1;
+							}
+						}
+
+					}
+				}
+			}
+			initvector.push_back(item.id);
 			while(getline(inFile, line)){
 				line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
 				if(!line.empty()){
@@ -113,8 +134,7 @@ void KMeans::randomInitialization()
 							/*convert values of vector from string to double*/
 							item.vec.push_back(stod(vector_value));
 						}
-						cout << "item id: " << item.id << endl;
-						//print_vector(item.vec);
+	
 						/*create cluster*/
 						Cluster clusterObject(i,item );
 						this->_clusters.push_back(clusterObject);
@@ -129,6 +149,7 @@ void KMeans::randomInitialization()
 		inFile.seekg(0,ios::beg);
 
 	}
+
 }
 
 bool KMeans::executeKMeans()
@@ -142,48 +163,28 @@ bool KMeans::executeKMeans()
 	}
 	else 
 		metric = cosine;
+	auto start = high_resolution_clock::now();
 	for(iter=0; iter<_max_iterations; iter++) {
 		cout << "Iteration " << iter << endl;
 		//assignment
-		//cout << "11111111111111111" << endl;
 		if(_assignChoice == 1){
 			changed = lloydsAssignment();
-			//printClusters();
-			/*
-			for(auto &item : _items) {
-				cout << "item cluster: " << item.cluster_id << " ";
-				cout << "item id: " << item.id  << " ";
-			}
-			*/
 		}
 		else if(_assignChoice == 2){//lsh assignment
-			//cout << "11111111111111111" << endl;
-			
 			LSHAssignment();
-			//printClusters();
-			//_LSHObject->displayLSH();
-			//lloydsAssignment();
 		}
 		else if(_assignChoice == 3){//cube assignment
 			CUBEAssignment();
 		}
 		//update
-		//cout << "22222222222222222" << endl;
 		if(_updateChoice == 1){
-			//cout << "22222222222222222" << endl;
 			updateMeans();
 		}
 		else if(_updateChoice == 2){
 			improvedLloydsUpdate();
 		}
-		//cout << "33333333333333333" << endl;
-		/*
-		if(!changed) {
-			cout << "Convergence after " << iter << " iterations" << endl;
-			return true;
-		}
-		*/
-		
+		auto stop = high_resolution_clock::now();
+		_duration= (stop-start);
 	}
 
 	if(_assignChoice == 2 || _assignChoice == 3){ 
@@ -191,42 +192,35 @@ bool KMeans::executeKMeans()
 		double mindist=99999999;
 		/*assign every unassigned point*/
 		if(metric == euclidean){ 
-			cout << "Remaining euclidean" << endl;
 			for(auto &item_ : _items) {
 				if(item_.cluster_id == -1){ 
-					cout <<"Before: "<< item_.cluster_id << " ";
-					for(int i=0;i<_K;i++){
+					for(int i=0;i<_K;i++){ 
 						dist=euclideanNorm(item_.vec,_clusters[i].getCentroid());
-						if(dist < mindist){
+						if(dist < mindist){ 
 							mindist = dist;
 							item_.distance = mindist;
 							item_.cluster_id = _clusters[i].getID();
-							cout << "Mid: " << item_.cluster_id << " ";
 						}
+						
 					}
 					_clusters[item_.cluster_id - 1].insertItem(item_);
 					mindist=99999999;
-					cout << "After: " << item_.cluster_id << endl;
 				}
 			}
 		}
 		else{
-			cout << "Remaining cosine" << endl;
 			for(auto &item_ : _items) {
 				if(item_.cluster_id == -1){ 
-					cout <<"Before: "<< item_.cluster_id << " ";
 					for(int i=0;i<_K;i++){
 						dist=1-cosineSimilarity(item_.vec,_clusters[i].getCentroid());
 						if(dist < mindist){
 							mindist = dist;
 							item_.distance = mindist;
 							item_.cluster_id = _clusters[i].getID();
-							cout << "Mid: " << item_.cluster_id << " ";
 						}
 					}
 					_clusters[item_.cluster_id - 1].insertItem(item_);
 					mindist=99999999;
-					cout << "After: " << item_.cluster_id << endl;
 				}
 			}
 		}
@@ -283,22 +277,18 @@ int KMeans::getNearestCluster(item_t item,Metric metric)
 	if(metric == euclidean){ 
 		for(i = 0;i<_K;i++){
 			double dist=euclideanNorm(item.vec,_clusters[i].getCentroid());
-			//cout << "Distance is " << dist << endl;
 			if(dist < min_dist) {
 				min_dist = dist;
 				min_cluster = _clusters[i].getID();
-				//cout << "min cluster: " << min_cluster << endl; 
 			}
 		}
 	}
 	else{
 		for(i = 0;i<_K;i++){
 			double dist=1-cosineSimilarity(item.vec,_clusters[i].getCentroid());
-			//cout << "Distance is " << dist << endl;
 			if(dist < min_dist) {
 				min_dist = dist;
 				min_cluster = _clusters[i].getID();
-				//cout << "min cluster: " << min_cluster << endl; 
 			}
 		}
 	}
@@ -322,7 +312,6 @@ bool KMeans::LSHAssignment()
 	}
 
 	initialRange = initialRangeLSH(metric);
-	
 	for(int counter=0;counter<5;counter++){ 
 		for (int i = 0; i < _clusters.size(); i++){
 			items = _LSHObject->rangeSearch(_clusters[i].getCentroid(),_clusters[i].getID(),initialRange,1,metric);
@@ -330,9 +319,7 @@ bool KMeans::LSHAssignment()
 				for(int j_j=0;j_j<items[j].size();j_j++) {
 					//cout << "items["<<j<<"]"<<"["<<j_j<<"]"<<".cluster_id: " << items[j][j_j].cluster_id << endl;;
 					for(auto &item_ : _items) {
-
 						bool val = item_.cluster_id != items[j][j_j].cluster_id;
-						//
 						//if new cluster is different from the old one ,then remove item from old cluster
 						if(val == true ){
 							if(item_.id == items[j][j_j].id) { 
@@ -351,14 +338,10 @@ bool KMeans::LSHAssignment()
 								}
 							}
 						}
-						//else do nothing
 						changed = changed || val;
-
-						//cout <<"Item: " << item_.id << " assigned to cluster: " << item_.cluster_id << " ";
 					}
 				}
 			}
-			//cout << endl;
 
 			items.clear();
 		}
@@ -376,11 +359,13 @@ double KMeans::initialRangeLSH(Metric metric)
 	double minDistance = 900000000;
 	double distance =0;
 	if(metric == euclidean){ 
-		for (int i = 0; i < _clusters.size()-1;i++){
-			for (int j = i+1; j < _clusters.size(); j++){
-				distance = euclideanNorm(_clusters[i].getCentroid(),_clusters[j].getCentroid());
-				if(distance < minDistance){
-					minDistance = distance;
+		for (int i = 0; i < _clusters.size();i++){
+			for (int j = 0; j < _clusters.size(); j++){
+				if(i != j){ 
+					distance = euclideanNorm(_clusters[i].getCentroid(),_clusters[j].getCentroid());
+					if((distance < minDistance) && distance != 0){
+						minDistance = distance;
+					}
 				}
 			}
 		}
@@ -389,13 +374,12 @@ double KMeans::initialRangeLSH(Metric metric)
 		for (int i = 0; i < _clusters.size()-1;i++){
 			for (int j = i+1; j < _clusters.size(); j++){
 				distance = 1-cosineSimilarity(_clusters[i].getCentroid(),_clusters[j].getCentroid());
-				if(distance < minDistance){
+				if((distance < minDistance) && distance != 0){
 					minDistance = distance;
 				}
 			}
 		}
 	}
-
 	return minDistance/double(2.0);
 }
 
@@ -460,14 +444,11 @@ bool KMeans::updateMeans()
 		auto newPair = std::pair<int, const item_t*>(item.cluster_id, &item);
 		itemClusterMap.insert(newPair);
 	}	
-	/*compute the mean for every cluster*/
-
+	/*calculate the mean for every cluster*/
 	int i;
 	for(i=0;i<_K;i++){
-		//cout << "Edw " << i << " ";
 		computeMean(itemClusterMap, _clusters[i].getID(), &_clusters[i]);
 	}
-	//cout << "Mphka 2" << endl;
 	return true;
 }
 
@@ -482,13 +463,13 @@ void KMeans::computeMean(const multimap<int, const item_t*> &multimap, int clust
 	auto currentCluster = multimap.equal_range(clusterID);
 	int totalItems = 0;
 
-	//cout << "before calculate mean" << endl;
+
 	/*calculate mean*/
 	for(auto iter=currentCluster.first; iter != currentCluster.second; iter++) {
 		cluster->add(*(iter->second));
 		totalItems++;
 	}
-	//cout << "before final " << endl;
+
 	cluster->calculateFinal(totalItems);
 
 }
@@ -552,21 +533,47 @@ bool KMeans::improvedLloydsUpdate()
 void KMeans::printClusters()
 {
 	int i;
-	item_t item;
 	vector_t vec;
 	int sum = 0;
-	for(i=0;i<this->_K;i++) {
-		vec = _clusters[i].getCentroid();
-		cout << "Cluster: " << _clusters[i].getID() << endl;
-		sum += _clusters[i].getTotalItems();
-		cout << "Number of items in cluster: " << _clusters[i].getTotalItems() << endl;
-		//cout << "Centroid: " << _clusters[i].getCentroidID() << endl;
-		//print_vector(vec);
+	if(_updateChoice == 1){ 
+		for(i=0;i<this->_K;i++) {
+			vec = _clusters[i].getCentroid();
+			cout << "CLUSTER-" << _clusters[i].getID();
+			cout << " " << "{size: "<< _clusters[i].getTotalItems()<<", ";
+			cout << "centroid: ";
+			print_vector(vec);
+			cout << "}"<< endl;
+		}
 	}
-	cout << "Total Items in clusters: " << sum << endl;
-	cout << "ai: " <<  _ai.size() << endl;
-	cout << "bi: " << _bi.size() << endl;
-	cout << "Silhouette: " << this->_avgSilhouette << endl;;
+	else if(_updateChoice == 2){
+		for(i=0;i<this->_K;i++) {
+			cout << "CLUSTER-" << _clusters[i].getID();
+			cout << " " << "{size: "<< _clusters[i].getTotalItems()<<", ";
+			cout << "centroid: " << _clusters[i].getCentroidID();
+			cout << "}"<< endl;
+			//print_vector(vec);
+		}
+	}
+
+	//if complete command line parameter is given
+	if(_complete == true){
+		for(i=0;i<this->_K;i++){
+			cout << endl;
+			cout << "CLUSTER-" << _clusters[i].getID() << " ";
+			cout << "{";
+			for(int j=0;j<_clusters[i].getTotalItems();j++){
+				cout << _clusters[i].getItem(j).id ;
+				cout << ", ";
+			}
+			cout << "}" << endl;
+		}
+	}
+	cout << "clustering_time: " << _duration.count() << std::fixed << "seconds" << endl;
+	cout << "Silhouette: [" ;
+	for(int i=0;i<_si.size();i++){
+		cout << _si[i] <<", ";
+	}
+	cout << this->_avgSilhouette << "]"<< endl;
 }
 
 double KMeans::computeSilhouette()
@@ -619,9 +626,7 @@ double KMeans::computeSilhouette()
 				//after finding second nearest cluster ,calculate b(i)
 				//get second nearest centroid
 				centroidNeighbor = _clusters[minID].getCentroid();
-				//cout << "Neighbor: " << minID << " " ;
 				clusterTotalItemsNeighbor = _clusters[minID].getTotalItems();
-				//cout << "clusterTotalItemsNeighbor " << clusterTotalItemsNeighbor << endl;
 				if(metric == euclidean){ 
 					for(jx=0;jx<clusterTotalItemsNeighbor;jx++) {
 						avgDist_b += euclideanNorm(item.vec, _clusters[minID].getItem(jx).vec);
@@ -641,28 +646,25 @@ double KMeans::computeSilhouette()
 			}
 	
 			bi = bi / double(bi_values.size());
-			//cout << "bi: " << bi << " " ;
 			//average bi for each cluster
 			_bi.push_back(bi);
 			_ai.push_back(_clusters[i].computeAvgDistance(metric));
 
 		}
-		else{
-			cout << "empty cluster: " << i << endl;
-		}
-		
 	}
 	
-	//cout << "eftasa" << endl;
+
 	for(i=0;i<this->_bi.size();i++) {
 		if(_ai[i] >= _bi[i]) {
 			sum += ((_bi[i] - _ai[i]) / _ai[i]);
+			_si.push_back(((_bi[i] - _ai[i]) / _ai[i]));
 		}
 		else {
 			sum += ((_bi[i] - _ai[i]) / _bi[i]);
+			_si.push_back(((_bi[i] - _ai[i]) / _bi[i]));
 		}
 	}
-	this->_avgSilhouette = sum / this->_ai.size();
+	this->_avgSilhouette = sum / this->_K;
 	return 0;
 }
 
@@ -728,6 +730,9 @@ void initParametersKMeans(init_params_t *init_params, int argc, char** argv)
 		else if(strcmp(argv[i],"-d") == 0){
 			i++;
 			init_params->met = argv[i];
+		}
+		else if(strcmp(argv[i],"-complete") == 0) {
+			init_params->complete = true;
 		}
 	}
 }
