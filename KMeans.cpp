@@ -262,8 +262,6 @@ bool KMeans::lloydsAssignment()
 		//else do nothing
 		
 		changed = changed || val;
-
-		//cout <<"Item: " << item.id << " assigned to cluster: " << item.cluster_id << endl;
 	}
 	return changed;
 }
@@ -317,7 +315,6 @@ bool KMeans::LSHAssignment()
 			items = _LSHObject->rangeSearch(_clusters[i].getCentroid(),_clusters[i].getID(),initialRange,1,metric);
 			for(int j=0;j<items.size();j++){
 				for(int j_j=0;j_j<items[j].size();j_j++) {
-					//cout << "items["<<j<<"]"<<"["<<j_j<<"]"<<".cluster_id: " << items[j][j_j].cluster_id << endl;;
 					for(auto &item_ : _items) {
 						bool val = item_.cluster_id != items[j][j_j].cluster_id;
 						//if new cluster is different from the old one ,then remove item from old cluster
@@ -598,18 +595,13 @@ double KMeans::computeSilhouette()
 		metric = cosine;
 	}
 	for(i=0;i < _K ; i++) { //for each cluster
-		//cout << "outer _K: " << i << " ";
-		//cout << "Cluster " << i << endl;
 		clusterTotalItems = _clusters[i].getTotalItems();
-		//cout << "clusterTotalItems " <<  clusterTotalItems << endl;
 		if(clusterTotalItems > 0){ 
 			for(ix =  0;ix<clusterTotalItems;ix++){ //for every item in a cluster,calculate b(i)
 				avgDist_b = 0;
 				item = _clusters[i].getItem(ix);
 				for(j=0;j<_K;j++) { //find second nearest cluster
-					//cout << "inner_K: " << j << " ";
 					if(i != j){
-						//cout <<"i: " << i << " j: " << j << " ";
 						centroidNeighbor = _clusters[j].getCentroid();
 						if(_clusters[j].getTotalItems() > 0) { //if cluster is not empty
 							if(metric == euclidean)

@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 
 	ofstream outputFile(init_params.output_file);
 	streambuf *coutbuf = cout.rdbuf();
-	//cout.rdbuf(outputFile.rdbuf());
+	cout.rdbuf(outputFile.rdbuf());
 
 	KMeans KMeansObject(init_params);
 	if(init_params.init_choice == 1) { 
@@ -40,6 +40,6 @@ int main(int argc, char **argv) {
 	KMeansObject.computeSilhouette();
 	KMeansObject.printClusters();
 
-	//cout.rdbuf(coutbuf);
+	cout.rdbuf(coutbuf);
 
 }

@@ -43,7 +43,6 @@ vector<item_t> Hash::traverseBucket(vector_t q, int cluster_id, long int hashVal
 {
 	double distance = 0;
 	vector<item_t> items;
-	//cout << "Range Search in Bucket["<<hashValue<<"]"<<endl;
 	
 	for(auto &x: _hashTable[hashValue]){
 		/*calculate Eucledian deistance*/
@@ -62,9 +61,6 @@ vector<item_t> Hash::traverseBucket(vector_t q, int cluster_id, long int hashVal
 						items.push_back(x);
 					}
 				}
-				//cout << "Item: "<< x.id << " " << distance << endl;
-				//cout << "distance: " << distance << endl;
-				//print_vector(x.vec);
 			}
 		}
 		else if(metric == cosine) {
@@ -81,9 +77,6 @@ vector<item_t> Hash::traverseBucket(vector_t q, int cluster_id, long int hashVal
 						items.push_back(x);
 					}
 				}
-				//cout << "Item: "<< x.id << " " << distance << endl;
-				//cout << "cosine distance: " << distance << endl;
-				//print_vector(x.vec);
 			}
 		}	
 	}
@@ -192,7 +185,6 @@ double euclideanNorm(vector_t u, vector_t v)
 	for(i = 0; i < (int)v.size(); i++){
 		sum = sum + pow(u[i]-v[i],2);
 	}
-	//cout << "sqrt(sum) = " << sqrt(sum) << endl;
 	return sqrt(sum);
 }
 
@@ -214,7 +206,6 @@ double innerProduct(vector_t u, vector_t v)
 	double sum = 0;
 	for(i=0; i < (int)v.size(); i++ ){
 		sum = sum + u[i]*v[i];
-		//cout << "sum: " << sum << endl;
 	}
 
 	return sum;
@@ -230,13 +221,8 @@ double Hash::hash(vector_t p)
 	uniform_int_distribution<int> distribution(0,500);//initialize for R value
 	for(int i=0;i<(int)this->vec_v.size();i++){ 
 		value = ((innerProduct(p, this->vec_v[i]) + vec_t[i]) / double(_w));
-		//value = value*100;
-		//cout << "value: " << value<< endl;
-		//sum of hi functions to create f
 		sum+= (distribution(generator) * value);
-		//cout << "sum: " << sum << endl;
 	}
-	//cout << "Sum is: " << sum << endl;
 	return sum;
 }
 
@@ -326,7 +312,6 @@ double Hash::random_offset()
 	uniform_int_distribution<int> distribution(0,_w); //according to theory
 	double t;
 	t = distribution(generator);
-	//cout << "t " << t <<endl;
 	return t;
 }
 

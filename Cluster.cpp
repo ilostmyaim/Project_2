@@ -25,13 +25,6 @@ Cluster::Cluster(int cluster_id, item_t item)
 
 }
 
-/*
-void Cluster::addItem(item_t item)
-{
-	_items.push_back(item);
-}
-*/
-
 
 bool Cluster::removeItem(unsigned int item_id)
 {

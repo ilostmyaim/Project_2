@@ -108,10 +108,7 @@ vector< vector<item_t> > LSH::rangeSearch(vector_t q, int cluster_id, double R, 
 	if(metric == euclidean){ 
 		for(i_l = 0; i_l < _L; i_l++){ //for each array hash q vector and execute range search
 			hash_value = _arrayOfHashTables[i_l]->hash(q);
-			//print_vector(q);
-			//cout << "hash_value " << hash_value << endl;
 			actualHashValue = ((hash_value % M) + M) % _hashTableSize;
-			//cout << "actual hash_value " << actualHashValue << endl;
 			items.push_back(_arrayOfHashTables[i_l]->traverseBucket(q, cluster_id,actualHashValue, R, C , metric));
 		}
 	}
